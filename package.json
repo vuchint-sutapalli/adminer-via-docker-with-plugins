@@ -1,0 +1,17 @@
+{
+  "name": "db",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+ "scripts": {
+    "pg:up": "docker compose -f ./compose.yml up -d",
+    "pgcustom:up": "docker compose -f ./docker-compose.yml up -d",
+    "pg:down": "docker compose -f ./compose.yml down",
+    "pgcustom:down": "docker compose -f ./docker-compose.yml down",
+    "pg": "npm run pg:up",
+    "pgcustom": "npm run pgcustom:up"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
