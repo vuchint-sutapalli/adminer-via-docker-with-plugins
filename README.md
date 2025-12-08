@@ -1,74 +1,125 @@
-# Docker-based PostgreSQL + Adminer Setup
+# 🚀 PostgreSQL + Adminer with Gemini AI Integration
 
-This project provides a simple, containerized setup for a PostgreSQL database and the Adminer database management tool using Docker Compose.
+This project provides a robust, containerized environment using **Docker Compose** for a PostgreSQL database paired with the **Adminer** database management tool. It features custom plugin integration for enhanced functionality, including **AI-powered SQL generation** using the Gemini API.
 
-## Current Setup
+## Prerequisites
 
-The `docker-compose.yml` file defines two services:
+Before you begin, ensure you have the following installed on your system:
+- **Docker Engine**: [Installation Guide](https://docs.docker.com/engine/install/)
+- **Docker Compose**: [Installation Guide](https://docs.docker.com/compose/install/) (Included with Docker Desktop).
 
-1.  **`db` (PostgreSQL Database):**
-    *   **Image:** `postgres:alpine`
-    *   **Container Name:** `postgres`
-    *   **Database:** The database credentials and name are configured via the `.env` file.
-    *   **Port:** The database is accessible on your local machine at the port specified in the `DB_PORT` variable in the `.env` file.
-    *   **Data Persistence:** A named volume `postgres_data` is used to persist database data.
-    *   **Healthcheck:** A healthcheck is in place to ensure the `adminer` service only starts after the database is ready.
+---
 
-2.  **`adminer` (Database Management Tool):**
-    *   **Image:** `adminer`
-    *   **Port:** Accessible at `http://localhost:8080`.
-    *   **Plugins:** This setup uses a number of Adminer plugins, which are loaded from the `adminer-plugins` directory. The currently installed plugins are:
-        *   **CodeMirror:** for syntax highlighting in SQL commands.
-        *   **Gemini SQL:** for interacting with Google's Gemini AI to get SQL suggestions. Your Gemini API key must be set in the `.env` file.
+## ⚙️ Configuration
 
-## How to Use
+All dynamic settings (passwords, ports, API keys) are managed via a **`.env`** file.
 
-1.  **Prerequisites:** Make sure you have Docker and Docker Compose installed on your system.
-2.  **Configuration:** Create a `.env` file in the `db` directory by copying the `.env.example` file (if it exists) or by creating it from scratch. It should contain the following variables:
-    ```bash
-    DB_NAME=your_db_name
-    DB_USER=your_db_user
-    DB_PASSWORD=your_db_password
-    DB_PORT=5432
-    GEMINI_API_KEY=your_gemini_api_key
-    ```
-3.  **Start the services:** Open a terminal in the `db` directory and run:
-    ```bash
-    docker-compose up -d
-    ```
-4.  **Access Adminer:** Open your web browser and navigate to `http://localhost:8080`.
-5.  **Access the database:**
-    *   From Adminer: Use the database credentials from your `.env` file. The server name is `db`.
-    *   From your local machine: Connect using a PostgreSQL client to `localhost` on the port specified in `DB_PORT`.
+### 1. Create the `.env` File
 
-## Adding a New Plugin
+Create a file named `.env` by copying the provided sample:
 
-To add a new Adminer plugin, follow these steps:
+```sh
+# On Windows (Command Prompt)
+copy .env.sample .env
 
-1.  **Download the plugin:** Download the plugin's `.php` file and place it in the `db/adminer-plugins/plugins` directory.
-2.  **Create a loader file:** Create a new file in the `db/adminer-plugins` directory (e.g., `new-plugin-loader.php`). This file should include the plugin from the `plugins` directory and return a new instance of the plugin's class. For example:
+# On macOS/Linux
+cp .env.sample .env
+```
+
+Now, open the `.env` file and populate it with your desired credentials and Gemini API key:
+
+```ini
+# PostgreSQL Database Settings
+DB_NAME=your_app_db
+DB_USER=app_user
+DB_PASSWORD=secret_password_123
+DB_PORT=5432
+
+# Gemini AI Key for Adminer Plugin
+GEMINI_API_KEY=AIzaSy...your_gemini_key_here
+```
+
+### 2. Plugin Structure and Loading
+
+This setup uses separate loader files for each plugin, mounted directly into the Adminer container. This is a highly reliable method for loading parameterized plugins.
+
+| Local File | Container Path | Purpose |
+| :--- | :--- | :--- |
+| `./adminer-plugins/codemirror-loader.php` | `/var/www/html/plugins-enabled/codemirror-loader.php` | Loads the CodeMirror plugin for syntax highlighting. |
+| `./adminer-plugins/gemini-loader.php` | `/var/www/html/plugins-enabled/gemini-loader.php` | Loads the Gemini SQL plugin, passing the `GEMINI_API_KEY`. |
+| `./adminer-plugins/plugins/` | `/var/www/html/plugins-enabled/plugins/` | Contains the raw plugin `.php` files themselves. |
+
+---
+
+## 🚀 Usage
+
+### 1. Start the Services
+
+Open a terminal in the project's root directory and run Docker Compose:
+
+```sh
+docker compose up -d
+```
+The `-d` flag runs the containers in detached mode.
+
+### 2. Stop the Services
+
+To stop and remove the containers, networks, and volumes, run:
+
+```sh
+docker compose down
+```
+
+### 3. Access Adminer
+
+Once the services are running, open your web browser and navigate to: **[http://localhost:8080](http://localhost:8080)**
+
+Use the following credentials (from your `.env` file) to log in:
+
+| Login Field | Value |
+| :--- | :--- |
+| **System** | `PostgreSQL` |
+| **Server** | `db` |
+| **Username** | `${DB_USER}` |
+| **Password** | `${DB_PASSWORD}` |
+| **Database** | `${DB_NAME}` |
+
+
+### 4. Verify Plugin Functionality
+
+Navigate to the **SQL Command** area in Adminer. You should see:
+- **Syntax Highlighting**: The SQL editor will have color-coded syntax (from CodeMirror).
+- **Gemini AI**: A dedicated "Ask Gemini" text area will appear below the editor for AI-powered SQL generation.
+
+---
+
+## ➕ Adding a New Plugin
+
+To integrate any new Adminer plugin, follow these steps:
+
+1.  **Download and Place**: Download the plugin's `.php` file and place it inside the `./adminer-plugins/plugins/` directory.
+
+2.  **Create a Loader File**: Create a new PHP file in the `./adminer-plugins/` directory (e.g., `new-plugin-loader.php`). This file must include the plugin and return its new instance.
 
     ```php
     <?php
-    require_once(__DIR__ . '/plugins/new-plugin.php');
-
+    // new-plugin-loader.php
+    include_once(__DIR__ . '/plugins/new-plugin.php');
+    
     return new NameOfPluginClass();
     ?>
     ```
 
-3.  **Mount the loader in Docker Compose:** Open `db/docker-compose.yml` and add a new entry to the `volumes` section for the `adminer` service to mount your new loader file. It should look like this:
+3.  **Mount the Loader**: Update your **`compose.yml`** to mount this new loader file into the `adminer` service's volumes.
 
     ```yaml
+    # compose.yml (partial)
     services:
-      # ... other services
       adminer:
-        # ... other adminer config
+        # ...
         volumes:
-          # ... other volumes
+          # ... existing mounts
           - ./adminer-plugins/new-plugin-loader.php:/var/www/html/plugins-enabled/new-plugin-loader.php
     ```
 
-4.  **Restart the services:** Run the following command in the `db` directory to apply the changes:
-    ```bash
-    docker-compose up -d --force-recreate
-    ```
+4.  **Restart**: Run `docker compose up -d --force-recreate` to apply the changes.

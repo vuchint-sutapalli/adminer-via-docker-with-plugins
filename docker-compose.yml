@@ -37,7 +37,10 @@ services:
       #- ./adminer-plugins/prism-loader.php:/var/www/html/plugins-enabled/prism-loader.php
       - ./adminer-plugins/codemirror-loader.php:/var/www/html/plugins-enabled/codemirror-loader.php
       - ./adminer-plugins/gemini-loader.php:/var/www/html/plugins-enabled/gemini-loader.php
+      - ./adminer-plugins/sqllog-loader.php:/var/www/html/plugins-enabled/sqllog-loader.php
       - ./adminer-plugins/plugins:/var/www/html/plugins-enabled/plugins
+
+      - ./adminer-logs:/var/www/html/logs
 
 volumes:
   postgres_data:
